@@ -19,22 +19,8 @@
 		updatePageDisplay = function(table, c) {
 			c.startRow = c.size * (c.page) + 1;
 			c.endRow = Math.min(c.totalRows, c.size * (c.page+1));
-			var out = $(c.cssPageDisplay, c.container),
-			// form the output string
-			s = c.output.replace(/\{(page|totalPages|startRow|endRow|totalRows)\}/gi, function(m){
-						return {
-							'{page}'       : c.page + 1,
-							'{totalPages}' : c.totalPages,
-							'{startRow}'   : c.startRow,
-							'{endRow}'     : c.endRow,
-							'{totalRows}'  : c.totalRows
-						}[m];
-					});
-			if (out[0].tagName === 'INPUT') {
-				out.val(s);
-			} else {
-				out.html(s);
-			}
+			var out = $(c.cssPageDisplay, c.container);
+	
 			pagerArrows(c);
 			c.container.show(); // added in case the pager is reinitialized after being destroyed.
 			$(table).trigger('pagerComplete', c);
@@ -90,6 +76,7 @@
 				if (e > rows.length ) {
 					e = rows.length;
 				}
+				
 				// clear the table body
 				$.tablesorter.clearTableBody(table);
 				for (i = s; i < e; i++) {
@@ -226,14 +213,47 @@
 		};
 
 		this.construct = function(settings) {
+
 			return this.each(function() {
 				var c = $.extend(this.config, $.tablesorterPager.defaults, settings),
 				table = this,
 				pager = c.container;
+				
+				var list = $("<ul />");
+				
+				var prevBtn = $("<li />").addClass("prev disabled");
+				prevBtn.html("<a href='#'>&larr; Previous</a>");
+				
+				list.append(prevBtn);
+				
+				for (var i = 1; i <= 5; i++) {
+          var numBtn = $("<li />");
+          
+          if (i == 1)
+            numBtn.addClass("active");
+          
+          numBtn.html("<a href='#'>" + i + "</a>");
+          
+          numBtn.bind("click.pager", function() {
+            c.page = i;
+            moveToPage(table, c);
+          });
+          
+          list.append(numBtn);
+				}
+				
+        var nextBtn = $("<li />").addClass("next");
+				nextBtn.html("<a href='#'>&rarr; Next</a>");
+				
+				list.append(nextBtn);
+
+        c.container.append(list);
+								
 				$(this).trigger("appendCache");
 
 				hideRowsSetup(table, c);
 
+/*
 				$(c.cssFirst,pager).unbind('click.pager').bind('click.pager', function() {
 					moveToFirstPage(table, c);
 					return false;
@@ -254,6 +274,7 @@
 					setPageSize(table, parseInt($(this).val(), 10), c);
 					return false;
 				});
+*/
 
 				$(this)
 					.unbind('disable.pager enable.pager destroy.pager')
