@@ -1,6 +1,6 @@
 /*
  * tablesorter pager plugin
- * updated 2/16/2012
+ * updated 2/22/2012 by christianz
  */
 
 (function($) {
@@ -51,7 +51,6 @@
 		},
 
 		hideRowsSetup = function(table, c){
-			c.size = c.lastSize = parseInt($(c.cssPageSize, c.container).val(), 10);
 			pagerArrows(c);
 			if (!c.removeRows) {
 				hideRows(table, c);
@@ -134,6 +133,7 @@
 			if (c.page >= (c.totalPages-1)) {
 				c.page = (c.totalPages-1);
 			}
+			
 			moveToPage(table, c);
 		},
 
@@ -198,10 +198,6 @@
 			// css class names of pager arrows
 			cssNext: '.next', // next page arrow
 			cssPrev: '.prev', // previous page arrow
-			cssFirst: '.first', // first page arrow
-			cssLast: '.last', // last page arrow
-			cssPageDisplay: '.pagedisplay', // location of where the "output" is displayed
-			cssPageSize: '.pagesize', // page size selector - select dropdown that sets the "size" option
 
 			// class added to arrows when at the extremes (i.e. prev/first arrows are "disabled" when on the first page)
 			cssDisabled: 'disabled', // Note there is no period "." in front of this class name
@@ -219,24 +215,41 @@
 				table = this,
 				pager = c.container;
 				
+				hideRowsSetup(table, c);
+				
 				var list = $("<ul />");
 				
 				var prevBtn = $("<li />").addClass("prev disabled");
 				prevBtn.html("<a href='#'>&larr; Previous</a>");
 				
+				this.appender
+				
+				prevBtn.bind("click.pager", function() {
+          moveToPrevPage(table, c);
+          $(".pagerBtn").removeClass("active");
+          $(".pagerBtn[rel=" + c.page + "]").addClass("active");
+				});
+				
 				list.append(prevBtn);
 				
-				for (var i = 1; i <= 5; i++) {
+				var numPages = table.rows.length / c.size;
+				
+				for (var i = 0; i < numPages; i++) {
           var numBtn = $("<li />");
+          numBtn.addClass("pagerBtn");
           
-          if (i == 1)
+          numBtn.attr("rel", i);
+          
+          if (i == 0)
             numBtn.addClass("active");
           
-          numBtn.html("<a href='#'>" + i + "</a>");
+          numBtn.html("<a href='#'>" + (i + 1) + "</a>");
           
           numBtn.bind("click.pager", function() {
-            c.page = i;
+            c.page = parseInt($(this).attr("rel"));
             moveToPage(table, c);
+            $(".pagerBtn").removeClass("active");
+            $(this).addClass("active");
           });
           
           list.append(numBtn);
@@ -245,13 +258,17 @@
         var nextBtn = $("<li />").addClass("next");
 				nextBtn.html("<a href='#'>&rarr; Next</a>");
 				
+        nextBtn.bind("click.pager", function() {
+          moveToNextPage(table, c);
+          $(".pagerBtn").removeClass("active");
+          $(".pagerBtn[rel=" + c.page + "]").addClass("active");
+				});
+				
 				list.append(nextBtn);
 
         c.container.append(list);
 								
 				$(this).trigger("appendCache");
-
-				hideRowsSetup(table, c);
 
 /*
 				$(c.cssFirst,pager).unbind('click.pager').bind('click.pager', function() {
