@@ -130,18 +130,95 @@
 
 		moveToNextPage = function(table, c) {
 			c.page++;
+			
 			if (c.page >= (c.totalPages-1)) {
 				c.page = (c.totalPages-1);
 			}
 			
+			if (c.page % c.pagesToDisplay == 0) {
+        jumpToNextPageSet(table, c);
+			}
+			
 			moveToPage(table, c);
 		},
+		
+		jumpToNextPageSet = function(table, c) {
+      c.currentPageSet++;
+      
+      buildNumberButtons(table, c);
+		},
+		
+		jumpToPrevPageSet = function(table, c) {
+       c.currentPageSet--;
+       
+       buildNumberButtons(table, c);
+		},
+
+    buildNumberButtons = function(table, c) {
+      var cont = $(c.container.find(".pagerContainer"));
+      cont.html("");
+	
+      var prevBtn = $("<li />").addClass("prev disabled");
+      prevBtn.html("<a href='#'>" + c.prevText + "</a>");
+      
+      prevBtn.bind("click.pager", function() {
+        moveToPrevPage(table, c);
+        $(".pagerBtn").removeClass("active");
+        $(".pagerBtn[rel=" + c.page + "]").addClass("active");
+      });
+      
+      cont.append(prevBtn);
+      		
+      var startAt = c.currentPageSet * c.pagesToDisplay;
+      var endAt = startAt + c.pagesToDisplay;
+      
+      if (c.currentPageSet > 0 && (endAt > c.totalPages)) {
+        endAt = c.totalPages;
+      }
+      
+      for (var i = startAt; i < endAt; i++) {
+        var numBtn = $("<li />");
+        numBtn.addClass("pagerBtn numBtn");
+        
+        numBtn.attr("rel", i);
+        
+        if (i == 0)
+          numBtn.addClass("active");
+        
+        numBtn.html("<a href='#'>" + (i + 1) + "</a>");
+        
+        numBtn.bind("click.pager", function() {
+          c.page = parseInt($(this).attr("rel"));
+          moveToPage(table, c);
+          $(".pagerBtn").removeClass("active");
+          $(this).addClass("active");
+        });
+        
+        cont.append(numBtn);
+      }
+      
+      var nextBtn = $("<li />").addClass("next");
+      nextBtn.html("<a href='#'>" + c.nextText + "</a>");
+      
+      nextBtn.bind("click.pager", function() {
+        moveToNextPage(table, c);
+        $(".pagerBtn").removeClass("active");
+        $(".pagerBtn[rel=" + c.page + "]").addClass("active");
+      });
+
+      cont.append(nextBtn);
+    }
 
 		moveToPrevPage = function(table, c) {
 			c.page--;
 			if (c.page <= 0) {
 				c.page = 0;
 			}
+			
+      if ((c.page + 1) % c.pagesToDisplay == 0) {
+        jumpToPrevPageSet(table, c);
+			}
+			
 			moveToPage(table, c);
 		},
 
@@ -183,7 +260,7 @@
 			page: 0,
 
 			// Number of visible rows
-			size: 10,
+			size: 200,
 
 			// if true, moves the pager below the table at a fixed position; so if only 2 rows showing, the pager remains in the same place
 			positionFixed: true,
@@ -191,13 +268,20 @@
 			// offset added to the pager top, but only when "positionFixed" is true
 			offset: 0,
 
+      // Number of pages to display at a time
+      pagesToDisplay: 7,
+
 			// remove rows from the table to speed up the sort of large tables.
-			// setting this to false, only hides the non-visible rows; needed if you plan to add/remove rows with the pager enabled.
+			// setting this to false, only hides the non-visible rows; needed if you plan to add/remove rows with the pager enabled.   
 			removeRows: true, // removing rows in larger tables speeds up the sort
 
 			// css class names of pager arrows
 			cssNext: '.next', // next page arrow
 			cssPrev: '.prev', // previous page arrow
+			
+			// text on the previous and next buttons
+			prevText: '&larr; Previous', 
+			nextText: 'Next &rarr;',
 
 			// class added to arrows when at the extremes (i.e. prev/first arrows are "disabled" when on the first page)
 			cssDisabled: 'disabled', // Note there is no period "." in front of this class name
@@ -205,6 +289,7 @@
 			// stuff not set by the user
 			totalRows: 0,
 			totalPages: 0,
+			currentPageSet: 0,
 			appender: this.appender
 		};
 
@@ -218,56 +303,12 @@
 				hideRowsSetup(table, c);
 				
 				var list = $("<ul />");
+				list.addClass("pagerContainer");
 				
-				var prevBtn = $("<li />").addClass("prev disabled");
-				prevBtn.html("<a href='#'>&larr; Previous</a>");
-				
-				this.appender
-				
-				prevBtn.bind("click.pager", function() {
-          moveToPrevPage(table, c);
-          $(".pagerBtn").removeClass("active");
-          $(".pagerBtn[rel=" + c.page + "]").addClass("active");
-				});
-				
-				list.append(prevBtn);
-				
-				var numPages = table.rows.length / c.size;
-				
-				for (var i = 0; i < numPages; i++) {
-          var numBtn = $("<li />");
-          numBtn.addClass("pagerBtn");
-          
-          numBtn.attr("rel", i);
-          
-          if (i == 0)
-            numBtn.addClass("active");
-          
-          numBtn.html("<a href='#'>" + (i + 1) + "</a>");
-          
-          numBtn.bind("click.pager", function() {
-            c.page = parseInt($(this).attr("rel"));
-            moveToPage(table, c);
-            $(".pagerBtn").removeClass("active");
-            $(this).addClass("active");
-          });
-          
-          list.append(numBtn);
-				}
-				
-        var nextBtn = $("<li />").addClass("next");
-				nextBtn.html("<a href='#'>&rarr; Next</a>");
-				
-        nextBtn.bind("click.pager", function() {
-          moveToNextPage(table, c);
-          $(".pagerBtn").removeClass("active");
-          $(".pagerBtn[rel=" + c.page + "]").addClass("active");
-				});
-				
-				list.append(nextBtn);
-
-        c.container.append(list);
+				c.container.append(list);
 								
+				buildNumberButtons(table, c);
+
 				$(this).trigger("appendCache");
 
 /*
